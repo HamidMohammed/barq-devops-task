@@ -35,6 +35,7 @@ services:
     networks: [backend]
   redis:
     image: redis:7.4-alpine@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
+    restart: unless-stopped
     container_name: redis
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     healthcheck:
