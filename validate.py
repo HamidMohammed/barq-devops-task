@@ -3,10 +3,21 @@
 import json
 import sys
 import urllib.request
-
+import subprocess
 
 BASE_URL = "http://localhost:8080"
-
+FRONTEND_NETWORK = "barq-assessment_frontend"
+BACKEND_NETWORK = "barq-assessment_backend"
+def docker_inspect(container):
+    result = subprocess.run(
+        ["docker", "inspect", container],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip())
+    return json.loads(result.stdout)[0]
 
 def check_url(path):
     url = BASE_URL + path
@@ -31,23 +42,54 @@ def check_url(path):
         print(f"FAIL {path}: {exc}")
         return False
 
-if not check_url("/"):
-    sys.exit(1)
+if __name__ == "__main__":
+    nginx = docker_inspect("nginx")
+    nginx_networks = set(nginx["NetworkSettings"]["Networks"])
+    if nginx_networks == {FRONTEND_NETWORK}:
+        print("PASS nginx network isolation")
+    else:
+        print(f"FAIL nginx network isolation: {nginx_networks}")
+        sys.exit(1)
+    for container in ["app-01", "app-02", "postgres", "redis"]:
+        info = docker_inspect(container)
+        networks = set(info["NetworkSettings"]["Networks"])
 
-if not check_url("/health"):
-    sys.exit(1)
+        if BACKEND_NETWORK in networks:
+            print(f"PASS {container} backend network")
+        else:
+            print(f"FAIL {container} missing backend network")
+            sys.exit(1)
+    for container in ["app-01", "app-02", "postgres", "redis"]:
+        info = docker_inspect(container)
+        ports = info["NetworkSettings"]["Ports"]
 
-if not check_url("/ready"):
-    sys.exit(1)
+        published = [
+            binding
+            for bindings in ports.values()
+            if bindings
+            for binding in bindings
+        ]
 
+        if not published:
+            print(f"PASS {container} no host port")
+        else:
+            print(f"FAIL {container} has published ports: {published}")
+            sys.exit(1)
+    if not check_url("/"):
+        sys.exit(1)
+    if not check_url("/health"):
+        sys.exit(1)
 
-if not check_url("/instance"):
-    sys.exit(1)
+    if not check_url("/ready"):
+        sys.exit(1)
 
-if not check_url("/records"):
-    sys.exit(1)
+    if not check_url("/instance"):
+        sys.exit(1)
 
-if not check_url("/counter"):
-    sys.exit(1)
+    if not check_url("/records"):
+        sys.exit(1)
 
-sys.exit(0)
+    if not check_url("/counter"):
+        sys.exit(1)
+
+    sys.exit(0)
