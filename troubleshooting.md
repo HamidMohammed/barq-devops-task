@@ -126,3 +126,14 @@ Keep chronological entries. Copy this block for each meaningful investigation.
 - Retest evidence:
 - Related commit:
 - Remaining uncertainty:
+
+
+## Failure test — app-01 stopped
+
+- Test: stopped `app-01` while keeping NGINX and `app-02` running.
+- During failure: sent 10 requests to `GET /health` through NGINX.
+- Result: 5 requests returned HTTP 200 and 5 returned HTTP 504.
+- Interpretation: NGINX continued attempting some requests against the stopped backend instead of immediately avoiding it.
+- Recovery: started `app-01` again and confirmed it became healthy.
+- After recovery: sent 10 requests to `GET /health`; all 10 returned HTTP 200.
+- Conclusion: the remaining backend kept some traffic available during the failure, but the current NGINX failure handling produced 504 errors for requests routed to the stopped instance.
