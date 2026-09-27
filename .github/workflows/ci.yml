@@ -20,3 +20,18 @@ jobs:
 
       - name: Start services
         run: docker compose up -d
+
+      - name: Wait for readiness
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8080/ready >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Services did not become ready"
+          docker compose ps
+          exit 1
+
+      - name: Validate environment
+        run: python validate.py
