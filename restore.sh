@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+
 set -euo pipefail
-echo 'NOT IMPLEMENTED: write the PostgreSQL restore script and prove recovery.' >&2
-exit 2
+
+
+BACKUP_FILE="backup.sql"
+
+docker compose exec -T postgres psql -U barq_app -d barq_tasks -v ON_ERROR_STOP=1 < "$BACKUP_FILE"
