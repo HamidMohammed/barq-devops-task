@@ -5,7 +5,7 @@ import sys
 import urllib.request
 import subprocess
 
-BASE_URL = "http://localhost:8080"
+BASE_URL = "http://localhost:8090"
 FRONTEND_NETWORK = "barq-assessment_frontend"
 BACKEND_NETWORK = "barq-assessment_backend"
 def docker_inspect(container):
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     else:
         print(f"FAIL nginx network isolation: {nginx_networks}")
         sys.exit(1)
-    for container in ["app-01", "app-02", "postgres", "redis"]:
+    for container in ["app-01", "app-02","app-03", "postgres", "redis"]:
         info = docker_inspect(container)
         networks = set(info["NetworkSettings"]["Networks"])
 
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         else:
             print(f"FAIL {container} missing backend network")
             sys.exit(1)
-    for container in ["app-01", "app-02", "postgres", "redis"]:
+    for container in ["app-01", "app-02","app-03", "postgres", "redis"]:
         info = docker_inspect(container)
         ports = info["NetworkSettings"]["Ports"]
 
